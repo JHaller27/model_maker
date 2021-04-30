@@ -49,6 +49,17 @@ def debug(func):
     return _do
 
 
+def elementize(word: str) -> str:
+    if word.endswith('ies'):
+        return word[:-3] + 'y'
+    elif word.endswith('es'):
+        return word[:-2] + 'e'
+    elif word.endswith('s'):
+        return word[:-1]
+    else:
+        return word + 'Item'
+
+
 def to_model_dict(name: str, obj, models: dict, converter: TypeConverter) -> None:
     if isinstance(obj, dict):
         type_name = converter.to_type_name(name)
@@ -63,14 +74,14 @@ def to_model_dict(name: str, obj, models: dict, converter: TypeConverter) -> Non
 
     if isinstance(obj, list):
         type_name = converter.to_type_name(name)
-        sub_type = type_name + 'Item'
+        sub_type = elementize(type_name)
         # models[type_name] = sub_type
 
         #TODO Merge elements of obj
         if len(obj) == 0:
             return converter.get_unknown_type()
 
-        to_model_dict(sub_type, obj[0], models, converter)
+        sub_type = to_model_dict(sub_type, obj[0], models, converter)
 
         return converter.list_type_format(sub_type)
 
