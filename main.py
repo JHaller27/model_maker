@@ -197,5 +197,27 @@ def typescript(dryrun: bool = False) -> None:
     translate(printer, converter, global_state.path, global_state.rootname)
 
 
+@app.command()
+def csharp(dryrun: bool = False) -> None:
+    from csharp_generator import CSTypeConverter
+    converter: TypeConverter = CSTypeConverter()
+
+    decorator: ModelDecorator = NoDecoration()
+
+    printer: ModelPrinter
+    if global_state.outdir == '-':
+        from csharp_generator import SingleFilePrinter
+        printer: ModelPrinter = SingleFilePrinter(decorator)
+    else:
+        if dryrun:
+            from csharp_generator import MultiFileDryRunPrinter
+            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
+        else:
+            from csharp_generator import MultiFilePrinter
+            printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
+
+    translate(printer, converter, global_state.path, global_state.rootname)
+
+
 if __name__ == '__main__':
     app()
