@@ -47,7 +47,25 @@ class PydanticDecorator(ModelDecorator):
         yield line
 
 
-class SingleFilePrinter(ModelPrinter):
+class PythonPrinter(ModelPrinter):
+    def get_typing_imports(self, types):
+        import_types = set()
+        for t in types:
+            if t == 'Any':
+                import_types.add(t)
+            elif '[' in t:
+                import_types.add(t[:t.find('[')])
+
+        if len(import_types) == 0:
+            return None
+
+        return 'from typing import ' + ', '.join(import_types)
+
+    def print(self, model: dict) -> str:
+        super().__init__(model)
+
+
+class SingleFilePrinter(PythonPrinter):
     def print(self, model: dict):
         types = reduce(lambda acc, curr: acc + curr, map(lambda prop: list(prop.values()), list(model.values())))
         if typing_imports := self.get_typing_imports(types):
@@ -72,7 +90,7 @@ class SingleFilePrinter(ModelPrinter):
                     print(line)
 
 
-class MultiFilePrinter(ModelPrinter):
+class MultiFilePrinter(PythonPrinter):
     def __init__(self, decorator: ModelDecorator, outdir: str) -> None:
         import os
 

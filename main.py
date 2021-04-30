@@ -110,19 +110,6 @@ class ModelPrinter:
     def print(self, model: dict) -> str:
         raise NotImplementedError
 
-    def get_typing_imports(self, types):
-        import_types = set()
-        for t in types:
-            if t == 'Any':
-                import_types.add(t)
-            elif '[' in t:
-                import_types.add(t[:t.find('[')])
-
-        if len(import_types) == 0:
-            return None
-
-        return 'from typing import ' + ', '.join(import_types)
-
 
 def translate(printer: ModelPrinter, converter: TypeConverter, path: str, rootname: str):
     data = get_data(path)
@@ -179,7 +166,24 @@ def python(pydantic: bool = False, dryrun: bool = False) -> None:
 
 @app.command()
 def typescript(dryrun: bool = False) -> None:
-    pass
+    from typescript_generator import TSTypeConverter
+    converter: TypeConverter = TSTypeConverter()
+
+    decorator: ModelDecorator = NoDecoration()
+
+    printer: ModelPrinter
+    if global_state.outdir == '-':
+        from typescript_generator import SingleFilePrinter
+        printer: ModelPrinter = SingleFilePrinter(decorator)
+    else:
+        if dryrun:
+            from typescript_generator import MultiFileDryRunPrinter
+            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
+        else:
+            from typescript_generator import MultiFilePrinter
+            printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
+
+    translate(printer, converter, global_state.path, global_state.rootname)
 
 
 if __name__ == '__main__':
