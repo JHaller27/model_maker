@@ -6,7 +6,7 @@ class TSTypeConverter(TypeConverter):
         'str': 'string',
         'int': 'number',
         'float': 'number',
-        'bool': 'bool',
+        'bool': 'boolean',
     }
     def to_type_name(self, name: str) -> str:
         if mapped_name := TSTypeConverter.primitive_map.get(name):
