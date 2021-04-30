@@ -1,6 +1,6 @@
 import json
 import argparse
-from functools import reduce
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -27,26 +27,17 @@ def read_stdin():
             line = ""
 
 
-args = get_args()
+def get_data(path):
+    if path == '-':
+        data = '\n'.join(read_stdin())
+    else:
+        with open(path) as fp:
+            data = fp.read()
 
-if args.path == '-':
-    data = '\n'.join(read_stdin())
-else:
-    with open(args.path) as fp:
-        data = fp.read()
+    data = json.loads(data)
 
-data = json.loads(data)
+    return data
 
-'''
-class Root:
-    spell: str
-
-{
-    "Root": {
-        "spell": "str"
-    }
-}
-'''
 
 def debug(func):
     def _do(*args, **kwargs):
@@ -65,7 +56,6 @@ def to_type_name(name: str) -> str:
         return name
 
     return name.replace('_', ' ').title().replace(' ', '')
-
 
 
 def to_model_dict(name: str, obj, models: dict) -> None:
@@ -108,7 +98,14 @@ class ModelDecorator:
 
 
 class ModelPrinter:
-    def print(self, model: dict, decorator: ModelDecorator) -> str:
+    def __init__(self, decorator: ModelDecorator) -> None:
+        self._decorator = decorator
+
+    @property
+    def decorator(self) -> ModelDecorator:
+        return self._decorator
+
+    def print(self, model: dict) -> str:
         raise NotImplementedError
 
     def get_typing_imports(self, types):
@@ -120,11 +117,7 @@ class ModelPrinter:
         return 'from typing import ' + ', '.join(import_types)
 
 
-def generate_python():
-    all_models = dict()
-
-    to_model_dict(args.rootname, data, all_models)
-
+def generate_python() -> ModelPrinter:
     decorator: ModelDecorator
     if not args.pydantic:
         from python_generator import DataclassDecoration
@@ -137,17 +130,36 @@ def generate_python():
     if args.outdir is not None:
         if args.dry:
             from python_generator import MultiFileDryRunPrinter
-            printer: ModelPrinter = MultiFileDryRunPrinter(args.outdir)
+            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, args.outdir)
         else:
             from python_generator import MultiFilePrinter
-            printer: ModelPrinter = MultiFilePrinter(args.outdir)
+            printer: ModelPrinter = MultiFilePrinter(decorator, args.outdir)
     else:
         from python_generator import SingleFilePrinter
-        printer: ModelPrinter = SingleFilePrinter()
+        printer: ModelPrinter = SingleFilePrinter(decorator)
 
-    printer.print(all_models, decorator)
+    return printer
 
-if args.language == 'python':
-    generate_python()
-else:
-    raise ValueError(f"language '{args.language}' is not supported")
+
+def translate(printer: ModelPrinter, path: str, rootname: str):
+    data = get_data(path)
+
+    all_models = dict()
+    to_model_dict(rootname, data, all_models)
+
+    printer.print(all_models)
+
+
+def main(args):
+    # Select language
+    if args.language == 'python':
+        printer = generate_python()
+    else:
+        raise ValueError(f"language '{args.language}' is not supported")
+
+    translate(printer, args.path, args.rootname)
+
+
+if __name__ == '__main__':
+    args = get_args()
+    main(args)
