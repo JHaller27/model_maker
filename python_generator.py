@@ -92,10 +92,10 @@ class MultiFilePrinter(ModelPrinter):
         for cls_name, props in model.items():
             fname = cls2file[cls_name]
             with open(self._get_path(fname), 'w') as fout:
-                for line in self._get_lines(model, cls_name, props, cls2file):
+                for line in self._get_lines(cls_name, props, cls2file):
                     fout.write(line + '\n')
 
-    def _get_lines(self, model: dict, cls_name: str, props: dict, cls2file: dict):
+    def _get_lines(self, cls_name: str, props: dict, cls2file: dict):
             # Import typing requirements
             if typing_imports := self.get_typing_imports(props.values()):
                 yield typing_imports
@@ -131,6 +131,6 @@ class MultiFileDryRunPrinter(MultiFilePrinter):
         for cls_name, props in model.items():
             fname = cls2file[cls_name]
             print('##', self._get_path(fname))
-            for line in self._get_lines(model, cls_name, props, cls2file):
+            for line in self._get_lines(cls_name, props, cls2file):
                 print(line)
             print()
