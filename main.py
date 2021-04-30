@@ -109,7 +109,12 @@ class ModelPrinter:
         raise NotImplementedError
 
     def get_typing_imports(self, types):
-        import_types = set(t[:t.find('[')] for t in types if '[' in t or t == 'Any')
+        import_types = set()
+        for t in types:
+            if t == 'Any':
+                import_types.add(t)
+            elif '[' in t:
+                import_types.add(t[:t.find('[')])
 
         if len(import_types) == 0:
             return None
