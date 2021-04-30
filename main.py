@@ -1,20 +1,6 @@
 import json
-import argparse
-
-
-def get_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('-p', '--path', type=str, default='-', help='Path to JSON file to generate models from')
-    parser.add_argument('--pydantic', action='store_true', help='Generate pydantic models instead of dataclasses')
-    parser.add_argument('-n', '--rootname', type=str, default='Root', help='Name of root class')
-    parser.add_argument('-d', '--outdir', type=str, help='Directory to output to (default: stdout, formatted as one file)')
-    parser.add_argument('--dry-run', dest='dry', action='store_true', help='Output to stdout, but show each file')
-    parser.add_argument('-l', '--language', type=str, default='python', help='Language to generate')
-
-    args = parser.parse_args()
-
-    return args
+from typing import Optional
+import typer
 
 
 def read_stdin():
@@ -122,9 +108,9 @@ class ModelPrinter:
         return 'from typing import ' + ', '.join(import_types)
 
 
-def generate_python() -> ModelPrinter:
+def generate_python(pydantic: bool, outdir: Optional[str], dry: bool = False) -> ModelPrinter:
     decorator: ModelDecorator
-    if not args.pydantic:
+    if not pydantic:
         from python_generator import DataclassDecoration
         decorator = DataclassDecoration()
     else:
@@ -132,13 +118,13 @@ def generate_python() -> ModelPrinter:
         decorator = PydanticDecorator()
 
     printer: ModelPrinter
-    if args.outdir is not None:
-        if args.dry:
+    if outdir is not None:
+        if dry:
             from python_generator import MultiFileDryRunPrinter
-            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, args.outdir)
+            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, outdir)
         else:
             from python_generator import MultiFilePrinter
-            printer: ModelPrinter = MultiFilePrinter(decorator, args.outdir)
+            printer: ModelPrinter = MultiFilePrinter(decorator, outdir)
     else:
         from python_generator import SingleFilePrinter
         printer: ModelPrinter = SingleFilePrinter(decorator)
@@ -155,16 +141,15 @@ def translate(printer: ModelPrinter, path: str, rootname: str):
     printer.print(all_models)
 
 
-def main(args):
+def main(language: str = 'python', path: str = '-', rootname: str = 'root', pydantic: bool = False, outdir: Optional[str] = None, dryrun: bool = False):
     # Select language
-    if args.language == 'python':
-        printer = generate_python()
+    if language == 'python':
+        printer = generate_python(pydantic, outdir, dryrun)
     else:
-        raise ValueError(f"language '{args.language}' is not supported")
+        raise ValueError(f"language '{language}' is not supported")
 
-    translate(printer, args.path, args.rootname)
+    translate(printer, path, rootname)
 
 
 if __name__ == '__main__':
-    args = get_args()
-    main(args)
+    typer.run(main)
