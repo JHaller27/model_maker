@@ -149,27 +149,27 @@ def get_paths(path: str = '-', outdir: str = '-', rootname: str = 'Root'):
 
 @app.command()
 def python(pydantic: bool = False, dryrun: bool = False) -> None:
-    from python_generator import PyTypeConverter
+    from languages.python_generator import PyTypeConverter
     converter: TypeConverter = PyTypeConverter()
 
     decorator: ModelDecorator
     if not pydantic:
-        from python_generator import DataclassDecoration
+        from languages.python_generator import DataclassDecoration
         decorator = DataclassDecoration()
     else:
-        from python_generator import PydanticDecorator
+        from languages.python_generator import PydanticDecorator
         decorator = PydanticDecorator()
 
     printer: ModelPrinter
     if global_state.outdir == '-':
-        from python_generator import SingleFilePrinter
+        from languages.python_generator import SingleFilePrinter
         printer: ModelPrinter = SingleFilePrinter(decorator)
     else:
         if dryrun:
-            from python_generator import MultiFileDryRunPrinter
+            from languages.python_generator import MultiFileDryRunPrinter
             printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
         else:
-            from python_generator import MultiFilePrinter
+            from languages.python_generator import MultiFilePrinter
             printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
 
     translate(printer, converter, global_state.path, global_state.rootname)
@@ -177,21 +177,21 @@ def python(pydantic: bool = False, dryrun: bool = False) -> None:
 
 @app.command()
 def typescript(dryrun: bool = False) -> None:
-    from typescript_generator import TSTypeConverter
+    from languages.typescript_generator import TSTypeConverter
     converter: TypeConverter = TSTypeConverter()
 
     decorator: ModelDecorator = NoDecoration()
 
     printer: ModelPrinter
     if global_state.outdir == '-':
-        from typescript_generator import SingleFilePrinter
+        from languages.typescript_generator import SingleFilePrinter
         printer: ModelPrinter = SingleFilePrinter(decorator)
     else:
         if dryrun:
-            from typescript_generator import MultiFileDryRunPrinter
+            from languages.typescript_generator import MultiFileDryRunPrinter
             printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
         else:
-            from typescript_generator import MultiFilePrinter
+            from languages.typescript_generator import MultiFilePrinter
             printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
 
     translate(printer, converter, global_state.path, global_state.rootname)
@@ -199,21 +199,21 @@ def typescript(dryrun: bool = False) -> None:
 
 @app.command()
 def csharp(dryrun: bool = False) -> None:
-    from csharp_generator import CSTypeConverter
+    from languages.csharp_generator import CSTypeConverter
     converter: TypeConverter = CSTypeConverter()
 
     decorator: ModelDecorator = NoDecoration()
 
     printer: ModelPrinter
     if global_state.outdir == '-':
-        from csharp_generator import SingleFilePrinter
+        from languages.csharp_generator import SingleFilePrinter
         printer: ModelPrinter = SingleFilePrinter(decorator)
     else:
         if dryrun:
-            from csharp_generator import MultiFileDryRunPrinter
+            from languages.csharp_generator import MultiFileDryRunPrinter
             printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
         else:
-            from csharp_generator import MultiFilePrinter
+            from languages.csharp_generator import MultiFilePrinter
             printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
 
     translate(printer, converter, global_state.path, global_state.rootname)
