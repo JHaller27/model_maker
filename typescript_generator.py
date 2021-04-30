@@ -94,7 +94,7 @@ class MultiFilePrinter(ModelPrinter):
                 yield line
 
             # Print class def
-            for line in self.decorator.class_def(f'export interface {cls_name}:'):
+            for line in self.decorator.class_def(f'export interface {cls_name} {{'):
                 yield line
 
             # Print property defs
