@@ -1,17 +1,23 @@
-from main import ModelDecorator, ModelPrinter
+from main import ModelDecorator, ModelPrinter, TypeConverter
 
 from functools import reduce
 
 
-class NoDecoration(ModelDecorator):
-    def imports(self) -> str:
-        return []
+class PyTypeConverter(TypeConverter):
+    def to_type_name(self, name: str) -> str:
+        if name in ['str', 'int', 'float', 'bool']:
+            return name
 
-    def class_def(self, line: str) -> str:
-        yield line
+        if name[0].isupper():
+            return name
 
-    def property_def(self, line: str) -> str:
-        yield line
+        return name.replace('_', ' ').title().replace(' ', '')
+
+    def get_unknown_type(self) -> str:
+        return 'Any'
+
+    def list_type_format(self, element_name: str) -> str:
+        return f'List[{element_name}]'
 
 
 class DataclassDecoration(ModelDecorator):

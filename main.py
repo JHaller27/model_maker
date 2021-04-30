@@ -7,6 +7,17 @@ from dataclasses import dataclass
 app = typer.Typer()
 
 
+class TypeConverter:
+    def to_type_name(self, name: str) -> str:
+        raise NotImplementedError
+
+    def get_unknown_type(self) -> str:
+        raise NotImplementedError
+
+    def list_type_format(self, element_name: str) -> str:
+        raise NotImplementedError
+
+
 def read_stdin():
     line = input()
     while line != '':
@@ -38,42 +49,32 @@ def debug(func):
     return _do
 
 
-def to_type_name(name: str) -> str:
-    if name in ['str', 'int', 'float', 'bool']:
-        return name
-
-    if name[0].isupper():
-        return name
-
-    return name.replace('_', ' ').title().replace(' ', '')
-
-
-def to_model_dict(name: str, obj, models: dict) -> None:
+def to_model_dict(name: str, obj, models: dict, converter: TypeConverter) -> None:
     if isinstance(obj, dict):
-        type_name = to_type_name(name)
+        type_name = converter.to_type_name(name)
         models[type_name] = {}
 
         for k, v in obj.items():
-            v_type = to_model_dict(k, v, models) or k
+            v_type = to_model_dict(k, v, models, converter) or k
 
             models[type_name][k] = v_type
 
         return type_name
 
     if isinstance(obj, list):
-        type_name = to_type_name(name)
+        type_name = converter.to_type_name(name)
         sub_type = type_name + 'Item'
         # models[type_name] = sub_type
 
         #TODO Merge elements of obj
         if len(obj) == 0:
-            return 'Any'
+            return converter.get_unknown_type()
 
-        to_model_dict(sub_type, obj[0], models)
+        to_model_dict(sub_type, obj[0], models, converter)
 
-        return f'List[{sub_type}]'
+        return converter.list_type_format(sub_type)
 
-    return to_type_name(type(obj).__name__)
+    return converter.to_type_name(type(obj).__name__)
 
 
 class ModelDecorator:
@@ -85,6 +86,17 @@ class ModelDecorator:
 
     def property_def(self, line: str) -> str:
         raise NotImplementedError
+
+
+class NoDecoration(ModelDecorator):
+    def imports(self) -> str:
+        return []
+
+    def class_def(self, line: str) -> str:
+        yield line
+
+    def property_def(self, line: str) -> str:
+        yield line
 
 
 class ModelPrinter:
@@ -112,11 +124,11 @@ class ModelPrinter:
         return 'from typing import ' + ', '.join(import_types)
 
 
-def translate(printer: ModelPrinter, path: str, rootname: str):
+def translate(printer: ModelPrinter, converter: TypeConverter, path: str, rootname: str):
     data = get_data(path)
 
     all_models = dict()
-    to_model_dict(rootname, data, all_models)
+    to_model_dict(rootname, data, all_models, converter)
 
     printer.print(all_models)
 
@@ -139,6 +151,9 @@ def get_paths(path: str = '-', outdir: str = '-', rootname: str = 'Root'):
 
 @app.command()
 def python(pydantic: bool = False, dryrun: bool = False) -> None:
+    from python_generator import PyTypeConverter
+    converter: TypeConverter = PyTypeConverter()
+
     decorator: ModelDecorator
     if not pydantic:
         from python_generator import DataclassDecoration
@@ -159,7 +174,7 @@ def python(pydantic: bool = False, dryrun: bool = False) -> None:
             from python_generator import MultiFilePrinter
             printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
 
-    translate(printer, global_state.path, global_state.rootname)
+    translate(printer, converter, global_state.path, global_state.rootname)
 
 
 @app.command()
