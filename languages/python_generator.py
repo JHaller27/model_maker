@@ -1,4 +1,4 @@
-from main import ModelDecorator, ModelPrinter, TypeConverter
+from printer_interfaces import ModelDecorator, ModelPrinter, TypeConverter
 
 from functools import reduce
 
