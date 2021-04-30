@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from printer_interfaces import *
 
+import click_spinner
+
 
 app = typer.Typer()
 
@@ -79,10 +81,11 @@ def to_model_dict(name: str, obj, models: dict, converter: TypeConverter) -> Non
 
 
 def translate(printer: ModelPrinter, converter: TypeConverter, path: str, rootname: str):
-    data = get_data(path)
+    with click_spinner.spinner():
+        data = get_data(path)
 
-    all_models = dict()
-    to_model_dict(rootname, data, all_models, converter)
+        all_models = dict()
+        to_model_dict(rootname, data, all_models, converter)
 
     printer.print(all_models)
 
