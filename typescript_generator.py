@@ -1,7 +1,5 @@
 from main import ModelDecorator, ModelPrinter, TypeConverter
 
-from functools import reduce
-
 
 class TSTypeConverter(TypeConverter):
     primitive_map: dict = {
