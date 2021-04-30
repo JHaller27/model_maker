@@ -1,6 +1,10 @@
 import json
 from typing import Optional
 import typer
+from dataclasses import dataclass
+
+
+app = typer.Typer()
 
 
 def read_stdin():
@@ -13,7 +17,7 @@ def read_stdin():
             line = ""
 
 
-def get_data(path):
+def get_data(path: str):
     if path == '-':
         data = '\n'.join(read_stdin())
     else:
@@ -108,30 +112,6 @@ class ModelPrinter:
         return 'from typing import ' + ', '.join(import_types)
 
 
-def generate_python(pydantic: bool, outdir: Optional[str], dry: bool = False) -> ModelPrinter:
-    decorator: ModelDecorator
-    if not pydantic:
-        from python_generator import DataclassDecoration
-        decorator = DataclassDecoration()
-    else:
-        from python_generator import PydanticDecorator
-        decorator = PydanticDecorator()
-
-    printer: ModelPrinter
-    if outdir is not None:
-        if dry:
-            from python_generator import MultiFileDryRunPrinter
-            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, outdir)
-        else:
-            from python_generator import MultiFilePrinter
-            printer: ModelPrinter = MultiFilePrinter(decorator, outdir)
-    else:
-        from python_generator import SingleFilePrinter
-        printer: ModelPrinter = SingleFilePrinter(decorator)
-
-    return printer
-
-
 def translate(printer: ModelPrinter, path: str, rootname: str):
     data = get_data(path)
 
@@ -141,15 +121,51 @@ def translate(printer: ModelPrinter, path: str, rootname: str):
     printer.print(all_models)
 
 
-def main(language: str = 'python', path: str = '-', rootname: str = 'root', pydantic: bool = False, outdir: Optional[str] = None, dryrun: bool = False):
-    # Select language
-    if language == 'python':
-        printer = generate_python(pydantic, outdir, dryrun)
-    else:
-        raise ValueError(f"language '{language}' is not supported")
+@dataclass
+class State:
+    path: str
+    rootname: str
+    outdir: str
 
-    translate(printer, path, rootname)
+global_state: State
+
+
+@app.callback()
+def get_paths(path: str = '-', outdir: str = '-', rootname: str = 'Root'):
+    global global_state
+
+    global_state = State(path=path, rootname=rootname, outdir=outdir)
+
+
+@app.command()
+def python(pydantic: bool = False, dryrun: bool = False) -> None:
+    decorator: ModelDecorator
+    if not pydantic:
+        from python_generator import DataclassDecoration
+        decorator = DataclassDecoration()
+    else:
+        from python_generator import PydanticDecorator
+        decorator = PydanticDecorator()
+
+    printer: ModelPrinter
+    if global_state.outdir == '-':
+        from python_generator import SingleFilePrinter
+        printer: ModelPrinter = SingleFilePrinter(decorator)
+    else:
+        if dryrun:
+            from python_generator import MultiFileDryRunPrinter
+            printer: ModelPrinter = MultiFileDryRunPrinter(decorator, global_state.outdir)
+        else:
+            from python_generator import MultiFilePrinter
+            printer: ModelPrinter = MultiFilePrinter(decorator, global_state.outdir)
+
+    translate(printer, global_state.path, global_state.rootname)
+
+
+@app.command()
+def typescript(dryrun: bool = False) -> None:
+    pass
 
 
 if __name__ == '__main__':
-    typer.run(main)
+    app()
