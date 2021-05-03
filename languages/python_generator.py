@@ -47,6 +47,27 @@ class PydanticDecorator(ModelDecorator):
         yield line
 
 
+class OptionalDecorator(ModelDecorator):
+    def __init__(self, base: ModelDecorator) -> None:
+        super().__init__()
+
+        self._base = base
+
+    def imports(self) -> str:
+        yield 'from typing import Optional'
+        for x in self._base.imports():
+            yield x
+
+    def class_def(self, line: str) -> str:
+        for x in self._base.class_def(line):
+            yield x
+
+    def property_def(self, line: str) -> str:
+        for x in self._base.property_def(line):
+            parts = x.split(': ')
+            yield f'{parts[0]}: Optional[{parts[1]}]'
+
+
 class PythonPrinter(ModelPrinter):
     def get_typing_imports(self, types):
         import_types = set()
@@ -92,12 +113,9 @@ class SingleFilePrinter(PythonPrinter):
 
 class MultiFilePrinter(PythonPrinter):
     def __init__(self, decorator: ModelDecorator, outdir: str) -> None:
-        import os
-
         super().__init__(decorator)
 
         self._outdir = outdir
-        os.makedirs(self._outdir, exist_ok=True)
 
     def _get_path(self, file_name: str) -> str:
         import os
@@ -105,6 +123,10 @@ class MultiFilePrinter(PythonPrinter):
         return os.path.join(self._outdir, file_name) + '.py'
 
     def print(self, model: dict):
+        import os
+
+        os.makedirs(self._outdir, exist_ok=True)
+
         cls2file = {cn: cn[0].lower() + cn[1:] for cn in model}
 
         for cls_name, props in model.items():

@@ -107,7 +107,7 @@ def get_paths(path: str = '-', outdir: str = '-', rootname: str = 'Root'):
 
 
 @app.command()
-def python(pydantic: bool = False, dryrun: bool = False) -> None:
+def python(pydantic: bool = False, dryrun: bool = False, optional: bool = False) -> None:
     from languages.python_generator import PyTypeConverter
     converter: TypeConverter = PyTypeConverter()
 
@@ -118,6 +118,10 @@ def python(pydantic: bool = False, dryrun: bool = False) -> None:
     else:
         from languages.python_generator import PydanticDecorator
         decorator = PydanticDecorator()
+
+    if optional:
+        from languages.python_generator import OptionalDecorator
+        decorator = OptionalDecorator(decorator)
 
     printer: ModelPrinter
     if global_state.outdir == '-':
