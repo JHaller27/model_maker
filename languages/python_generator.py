@@ -71,6 +71,7 @@ class OptionalDecorator(ModelDecorator):
 class PythonPrinter(ModelPrinter):
     def get_typing_imports(self, types):
         import_types = set()
+        import_types.add('Optional')
         for t in types:
             if t == 'Any':
                 import_types.add(t)
@@ -107,7 +108,7 @@ class SingleFilePrinter(PythonPrinter):
                 print(line)
 
             for prop_name, prop_type in props.items():
-                for line in self.decorator.property_def(f'    {prop_name}: {prop_type}'):
+                for line in self.decorator.property_def(f'    {prop_name}: Optional[{prop_type}]'):
                     print(line)
 
 
@@ -160,7 +161,7 @@ class MultiFilePrinter(PythonPrinter):
 
             # Print property defs
             for prop_name, prop_type in props.items():
-                for line in self.decorator.property_def(f'    {prop_name}: {prop_type}'):
+                for line in self.decorator.property_def(f'    {prop_name}: Optional[{prop_type}]'):
                     yield line
 
 
